@@ -1,7 +1,7 @@
 # DO NOT USE THIS IS A WIP
 # korma-encrypted
 
-https://travis-ci.org/wjdix/korma-encrypted.svg?branch=master
+[![Build Status](https://travis-ci.org/wjdix/korma-encrypted.svg?branch=master)](https://travis-ci.org/wjdix/korma-encrypted)
 
 Korma-Encrypted provides an extension to Korma to encrypt given database columns.
 
