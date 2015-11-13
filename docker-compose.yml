@@ -1,0 +1,12 @@
+db:
+  image: postgres:9.1
+  ports:
+    - "5432:5432"
+test:
+  image: clojure
+  command: lein test
+  working_dir: /code
+  volumes:
+    - .:/code
+  links:
+    - db
