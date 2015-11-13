@@ -1,3 +1,4 @@
+# DO NOT USE THIS IS A WIP
 # korma-encrypted
 
 Korma-Encrypted provides an extension to Korma to encrypt given database columns.
