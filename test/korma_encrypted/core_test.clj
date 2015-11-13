@@ -8,12 +8,14 @@
 
 (def spec (db/postgres {:db "korma_encrypted_test"
                         :user "postgres"
-                        :port "5433"
+                        :host "db"
+                        :port "5432"
                         :password "mysecretpassword"}))
 
 (def ddl-spec (db/postgres {:db "template1"
                             :user "postgres"
-                            :port "5433"
+                            :host "db"
+                            :port "5432"
                             :password "mysecretpassword"}))
 
 (use-fixtures :once

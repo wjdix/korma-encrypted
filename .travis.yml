@@ -4,5 +4,5 @@ services:
   - docker
 
 script:
-  - docker-compose build
-  - docker-compose run test
+  - docker-compose up -d db
+  - docker-compose run test lein test
