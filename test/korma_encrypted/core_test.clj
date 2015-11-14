@@ -6,15 +6,17 @@
             [korma.db :as db]
             [korma-encrypted.core :refer :all]))
 
+(def db-host (System/getenv "DB_PORT_5432_TCP_ADDR"))
+
 (def spec (db/postgres {:db "korma_encrypted_test"
                         :user "postgres"
-                        :host "db"
+                        :host db-host
                         :port "5432"
                         :password "mysecretpassword"}))
 
 (def ddl-spec (db/postgres {:db "template1"
                             :user "postgres"
-                            :host "db"
+                            :host db-host
                             :port "5432"
                             :password "mysecretpassword"}))
 
@@ -49,9 +51,9 @@
                                        (korma/where {:id (:id stored)})))]
     (is (= "4111111111111111" (:number retrieved)))))
 
-;;(deftest test-raw-values-are-not-stored
-;;  (let [stored (korma/insert credit-card-with-encrypted-fields
-;;                             (korma/values {:number "4111111111111111"}))
-;;        raw-retrieved (first (korma/exec-raw ["SELECT * from credit_cards WHERE id = ?" [(:id stored)]] :results))]
-;;    (is (not (= "4111111111111111" (:encrypted_number raw-retrieved))))))
+(deftest test-raw-values-are-not-stored
+  (let [stored (korma/insert credit-card-with-encrypted-fields
+                             (korma/values {:number "4111111111111111"}))
+        raw-retrieved (first (korma/exec-raw ["SELECT * from credit_cards WHERE id = ?" [(:id stored)]] :results))]
+    (is (not (= "4111111111111111" (:encrypted_number raw-retrieved))))))
 

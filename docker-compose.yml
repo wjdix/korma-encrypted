@@ -1,5 +1,7 @@
 db:
   image: postgres:9.1
+  ports:
+    - "5432:5432"
 test:
   image: clojure
   working_dir: /code
