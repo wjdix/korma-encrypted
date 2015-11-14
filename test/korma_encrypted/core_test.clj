@@ -7,17 +7,18 @@
             [korma-encrypted.core :refer :all]))
 
 (def db-host (System/getenv "DB_PORT_5432_TCP_ADDR"))
+(def db-port (System/getenv "DB_PORT_5432_TCP_PORT"))
 
 (def spec (db/postgres {:db "korma_encrypted_test"
                         :user "postgres"
                         :host db-host
-                        :port "5432"
+                        :port db-port
                         :password "mysecretpassword"}))
 
 (def ddl-spec (db/postgres {:db "template1"
                             :user "postgres"
                             :host db-host
-                            :port "5432"
+                            :port db-port
                             :password "mysecretpassword"}))
 
 (use-fixtures :once
