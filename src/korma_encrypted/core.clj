@@ -20,14 +20,16 @@
 (defn tap-class [x] (println x ) (println (class x)) x)
 
 (defn decrypt-value [value]
-  (let [as-bytes (b64/decode (.getBytes value))
-        decrypted-bytes (.decrypt box as-bytes)]
-    (-> decrypted-bytes bs/to-string)))
+  (when value
+    (let [as-bytes (b64/decode (.getBytes value))
+          decrypted-bytes (.decrypt box as-bytes)]
+      (-> decrypted-bytes bs/to-string))))
 
 (defn encrypt-value [value]
-  (let [as-bytes (bs/to-byte-array value)
-        encrypted (.encrypt box as-bytes)]
-    (-> encrypted b64/encode (String.))))
+  (when value
+    (let [as-bytes (bs/to-byte-array value)
+          encrypted (.encrypt box as-bytes)]
+      (-> encrypted b64/encode (String.)))))
 
 (defn tap [x] (println x) x)
 

@@ -52,6 +52,13 @@
                                        (korma/where {:id (:id stored)})))]
     (is (= "4111111111111111" (:number retrieved)))))
 
+(deftest test-nil-values
+  (let [stored (korma/insert credit-card-with-encrypted-fields
+                             (korma/values {}))
+        retrieved (first (korma/select credit-card-with-encrypted-fields
+                                       (korma/where {:id (:id stored)})))]
+    (is (= nil (:number retrieved)))))
+
 (deftest test-raw-values-are-not-stored
   (let [stored (korma/insert credit-card-with-encrypted-fields
                              (korma/values {:number "4111111111111111"}))
