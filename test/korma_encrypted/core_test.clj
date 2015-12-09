@@ -35,6 +35,7 @@
        spec
        (tap (sql/create-table-ddl "credit_cards"
                                   [:id "serial primary key"]
+                                  [:name "text"]
                                   [:encrypted_number "text"])))
 
     (db/defdb pg-db spec)
@@ -52,9 +53,9 @@
                                        (korma/where {:id (:id stored)})))]
     (is (= "4111111111111111" (:number retrieved)))))
 
-(deftest test-nil-values
+(deftest test-inserts-without-specifying-value
   (let [stored (korma/insert credit-card-with-encrypted-fields
-                             (korma/values {}))
+                             (korma/values {:name "joe"}))
         retrieved (first (korma/select credit-card-with-encrypted-fields
                                        (korma/where {:id (:id stored)})))]
     (is (= nil (:number retrieved)))))
@@ -65,3 +66,22 @@
         raw-retrieved (first (korma/exec-raw ["SELECT * from credit_cards WHERE id = ?" [(:id stored)]] :results))]
     (is (not (= "4111111111111111" (:encrypted_number raw-retrieved))))))
 
+(deftest test-updates-do-not-delete-encrypted-fields
+  (let [stored (korma/insert credit-card-with-encrypted-fields
+                             (korma/values {:number "4111111111111111", :name "Bob Dole"}))
+        updated (korma/update credit-card-with-encrypted-fields
+                              (korma/set-fields {:name "Bob Goal"})
+                              (korma/where {:id (:id stored)}))
+        retrieved (first (korma/select credit-card-with-encrypted-fields
+                                (korma/where {:id (:id stored)})))]
+    (is (= "4111111111111111" (:number retrieved)))))
+
+(deftest test-updates-encrypted-values-to-null
+  (let [stored (korma/insert credit-card-with-encrypted-fields
+                             (korma/values {:number "4111111111111111", :name "Bob Dole"}))
+        updated (korma/update credit-card-with-encrypted-fields
+                              (korma/set-fields {:number nil})
+                              (korma/where {:id (:id stored)}))
+        retrieved (first (korma/select credit-card-with-encrypted-fields
+                                (korma/where {:id (:id stored)})))]
+    (is (= nil (:number retrieved)))))
