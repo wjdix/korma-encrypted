@@ -33,17 +33,23 @@
 
 (defn tap [x] (println x) x)
 
+(defn prepare-values [field values]
+  (if (contains? values field)
+    (let [unencrypted-value (field values)]
+      (-> values
+          (assoc (encrypted-name field) (encrypt-value unencrypted-value))
+          (dissoc field)))
+    values))
+
+(defn transform-values [field values]
+  (let [encrypted-field-name (encrypted-name field)
+        encrypted-value (get values encrypted-field-name)]
+    (-> values
+        (assoc field (decrypt-value encrypted-value))
+        (dissoc encrypted-field-name))))
+
 (defn encrypted-field [ent field]
   (-> ent
-      (korma/prepare (fn [v]
-                       (let [unencrypted (get v field)]
-                         (-> v
-                             (assoc (encrypted-name field) (encrypt-value unencrypted))
-                             (dissoc field)))))
-      (korma/transform (fn [v]
-                         (let [encrypted-field-name (encrypted-name field)
-                               encrypted (get v encrypted-field-name)]
-                           (-> v
-                               (assoc field (decrypt-value encrypted))
-                               (dissoc encrypted-field-name)))))
+      (korma/prepare (partial prepare-values field))
+      (korma/transform (partial transform-values field))
       (korma/rel (var encryption-keys) :belongs-to nil)))
