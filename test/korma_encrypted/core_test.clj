@@ -4,7 +4,12 @@
             [clojure.test :refer :all]
             [korma.core :as korma]
             [korma.db :as db]
-            [korma-encrypted.core :refer :all]))
+            [korma-encrypted.core :refer :all]
+            [korma-encrypted.crypto :refer :all]
+            [clojure.data.codec.base64 :as b64])
+  (:import [com.jtdowney.chloride.keys SecretKey]
+           [org.bouncycastle.jce.provider BouncyCastleProvider]
+           [com.jtdowney.chloride.boxes SecretBox]))
 
 (def db-host (System/getenv "DB_PORT_5432_TCP_ADDR"))
 (def db-port (System/getenv "DB_PORT_5432_TCP_PORT"))
@@ -21,6 +26,10 @@
                             :port db-port
                             :password "mysecretpassword"}))
 
+(def key-encryption-key (secretkey->str (SecretKey/generate))) ; this should really come from key service
+(def data-encryption-key (secretkey->str (SecretKey/generate)))
+(def encrypted-data-encryption-key (encrypt-value data-encryption-key (SecretBox. (str->secretkey key-encryption-key))))
+
 (use-fixtures :once
   (fn [f]
     (sql/db-do-commands
@@ -36,7 +45,13 @@
        (tap (sql/create-table-ddl "credit_cards"
                                   [:id "serial primary key"]
                                   [:name "text"]
-                                  [:encrypted_number "text"])))
+                                  [:encrypted_number "text"]))
+       (tap (sql/create-table-ddl "data_encryption_keys"
+                                  [:id "serial primary key"]
+                                  [:data_encryption_key "text"])))
+    (sql/db-do-prepared spec
+      "INSERT INTO data_encryption_keys (data_encryption_key) values(?)"
+      [encrypted-data-encryption-key])
 
     (db/defdb pg-db spec)
     (db/default-connection pg-db)
@@ -44,7 +59,7 @@
 
 (korma/defentity credit-card-with-encrypted-fields
   (korma/table :credit_cards)
-  (encrypted-field :number))
+  (encrypted-field :number key-encryption-key))
 
 (deftest test-round-trip
   (let [stored (korma/insert credit-card-with-encrypted-fields
@@ -61,29 +76,29 @@
 
 (deftest test-prepare-values-replaces-field-name-with-encrypted-field-name
   (let [values {:number "41111111111111"}
-        prepared-values (prepare-values :number values)]
+        prepared-values (prepare-values :number key-encryption-key values)]
     (is (contains? prepared-values :encrypted_number))
     (is (not (contains? prepared-values :number)))))
 
 (deftest test-prepare-values-set-field-to-null
   (let [values {:number nil}
-        prepared (prepare-values :number values)]
+        prepared (prepare-values :number key-encryption-key values)]
     (is (= {:encrypted_number nil} prepared))))
 
 (deftest test-prepare-values-without-specifying-fields
   (let [values {:name "Bob Dole"}
-        prepared (prepare-values :number values)]
+        prepared (prepare-values :number key-encryption-key values)]
     (is (= {:name "Bob Dole"} prepared))))
 
 (deftest test-transform-values-replaces-encrypted-field-with-field-name
   (let [values {:number "4111"}
-        prepared-values (prepare-values :number values)
-        transformed-values (transform-values :number prepared-values)]
+        prepared-values (prepare-values :number key-encryption-key values)
+        transformed-values (transform-values :number key-encryption-key prepared-values)]
     (is (contains? transformed-values :number))
     (is (not (contains? transformed-values :encrypted_number)))
     (is (= transformed-values values))))
 
 (deftest test-transform-values-with-null-column
   (let [values {:encrypted_number nil}
-        transformed-values (transform-values :number values)]
+        transformed-values (transform-values :number key-encryption-key values)]
     (is (= nil (:number values)))))
