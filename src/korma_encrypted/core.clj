@@ -13,16 +13,20 @@
 (korma/defentity data-encryption-keys
   (korma/table :data_encryption_keys))
 
+(defprotocol KeyService
+  (decrypt [self data])
+  (encrypt [self data]))
+
 (defn generate-and-save-data-encryption-key
-  ([key-encryption-key]
+  ([key-service]
     (let [data-encryption-key (secretkey->str (SecretKey/generate))
-          encrypted-data-encryption-key (encrypt-value data-encryption-key (SecretBox. (str->secretkey key-encryption-key)))]
+          encrypted-data-encryption-key (encrypt key-service data-encryption-key)]
       (korma/insert data-encryption-keys
                     (korma/values {:data_encryption_key encrypted-data-encryption-key}))))
 
-  ([key-encryption-key db]
+  ([key-service db]
     (korma.db/with-db db
-      (generate-and-save-data-encryption-key key-encryption-key))))
+      (generate-and-save-data-encryption-key key-service))))
 
 (defn tap-class [x] (println x ) (println (class x)) x)
 (defn tap [x] (println x) x)
@@ -35,13 +39,12 @@
       first
       :data_encryption_key))
 
-(defn- get-data-box [key-encryption-key]
-  (let [key-encryption-box (SecretBox. (str->secretkey key-encryption-key))
-        data-encryption-key (decrypt-value (get-encrypted-data-encryption-key) key-encryption-box)]
+(defn- get-data-box [key-service]
+  (let [data-encryption-key (decrypt key-service (get-encrypted-data-encryption-key))]
     (SecretBox. (str->secretkey data-encryption-key))))
 
-(defn prepare-values [field key-encryption-key values]
-  (let [box (get-data-box key-encryption-key)]
+(defn prepare-values [field key-service values]
+  (let [box (get-data-box key-service)]
     (if (contains? values field)
       (let [unencrypted-value (field values)]
         (-> values
@@ -49,16 +52,16 @@
             (dissoc field)))
       values)))
 
-(defn transform-values [field key-encryption-key values]
+(defn transform-values [field key-service values]
   (let [encrypted-field-name (encrypted-name field)
         encrypted-value (get values encrypted-field-name)
-        box (get-data-box key-encryption-key)]
+        box (get-data-box key-service)]
     (-> values
         (assoc field (decrypt-value encrypted-value box))
         (dissoc encrypted-field-name))))
 
-(defn encrypted-field [ent field key-encryption-key]
+(defn encrypted-field [ent field key-service]
   (-> ent
-      (korma/prepare (partial prepare-values field key-encryption-key))
-      (korma/transform (partial transform-values field key-encryption-key))
+      (korma/prepare (partial prepare-values field key-service))
+      (korma/transform (partial transform-values field key-service))
       (korma/rel (var data-encryption-keys) :belongs-to nil)))
