@@ -49,9 +49,6 @@
        (tap (sql/create-table-ddl "data_encryption_keys"
                                   [:id "serial primary key"]
                                   [:data_encryption_key "text"])))
-    (sql/db-do-prepared spec
-      "INSERT INTO data_encryption_keys (data_encryption_key) values(?)"
-      [encrypted-data-encryption-key])
 
     (db/defdb pg-db spec)
     (db/default-connection pg-db)
@@ -60,6 +57,8 @@
 (korma/defentity credit-card-with-encrypted-fields
   (korma/table :credit_cards)
   (encrypted-field :number key-encryption-key))
+
+(generate-and-save-data-encryption-key key-encryption-key spec)
 
 (deftest test-round-trip
   (let [stored (korma/insert credit-card-with-encrypted-fields
@@ -102,3 +101,9 @@
   (let [values {:encrypted_number nil}
         transformed-values (transform-values :number key-encryption-key values)]
     (is (= nil (:number values)))))
+
+(deftest test-generate-and-save-data-encryption-key
+  (let [saved-key (generate-and-save-data-encryption-key key-encryption-key)
+        stored (first (korma/select data-encryption-keys
+                             (korma/where {:id (:id saved-key)})))]
+    (is (= (:data_encryption_key stored) (:data_encryption_key saved-key)))))

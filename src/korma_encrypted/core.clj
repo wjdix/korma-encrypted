@@ -1,5 +1,6 @@
 (ns korma-encrypted.core
   (:require [korma.core :as korma]
+            [korma.db]
             [byte-streams :as bs]
             [clojure.data.codec.base64 :as b64]
             [korma-encrypted.crypto :refer :all])
@@ -11,6 +12,17 @@
 
 (korma/defentity data-encryption-keys
   (korma/table :data_encryption_keys))
+
+(defn generate-and-save-data-encryption-key
+  ([key-encryption-key]
+    (let [data-encryption-key (secretkey->str (SecretKey/generate))
+          encrypted-data-encryption-key (encrypt-value data-encryption-key (SecretBox. (str->secretkey key-encryption-key)))]
+      (korma/insert data-encryption-keys
+                    (korma/values {:data_encryption_key encrypted-data-encryption-key}))))
+
+  ([key-encryption-key db]
+    (korma.db/with-db db
+      (generate-and-save-data-encryption-key key-encryption-key))))
 
 (defn tap-class [x] (println x ) (println (class x)) x)
 (defn tap [x] (println x) x)

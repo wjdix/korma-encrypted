@@ -20,13 +20,16 @@ the Korma `defentity` macro.
 
 Korma Encrypted also requires a separate database table to include encryption keys and is configured with a key encryption key.
 Additionally korma-encrypted will create a relation between the table with encrypted columns and a table assumed to be
-called `encryption_keys`.
+called `data_encryption_keys`. You can generate an encrypted data encryption key with the `generated-and-save-data-encryption-key` function,
+also passing it your key encryption key and optionally the database to insert into.
 
 ```clojure
 (require [korma.core :as korma]
          [korma-encrypted.core :refer [encrypted-fields]])
 
 (def key-encryption-key "This is not secure, don't do this for real.")
+
+(generate-and-save-data-encryption-key key-encryption-key)
 
 (defentity credit-card
   (encrypted-fields key-encryption-key :number :expiration-date-month :expiration-date-year))
