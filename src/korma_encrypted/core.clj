@@ -39,9 +39,11 @@
       first
       :data_encryption_key))
 
-(defn- get-data-box [key-service]
-  (let [data-encryption-key (decrypt key-service (get-encrypted-data-encryption-key))]
-    (SecretBox. (str->secretkey data-encryption-key))))
+(def get-data-box
+  (memoize
+    (fn [key-service]
+      (let [data-encryption-key (decrypt key-service (get-encrypted-data-encryption-key))]
+        (SecretBox. (str->secretkey data-encryption-key))))))
 
 (defn prepare-values [field key-service values]
   (let [box (get-data-box key-service)]
