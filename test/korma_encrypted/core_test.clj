@@ -99,6 +99,12 @@
     (is (= (:number retrieved) "3222222222222222"))
     (is (= (:data_encryption_key_fk retrieved) (:pk old-data-encryption-key)))))
 
+(deftest test-updating-non-existent-record
+  (let [updated (update-encrypted-entity credit-card-with-encrypted-fields
+                                         -1
+                                         {:number "3222222222222222"})]
+    (is (= updated 0))))
+
 (deftest test-prepare-values-replaces-field-name-with-encrypted-field-name
   (let [values {:number "41111111111111"}
         prepared-values (prepare-values :number key-service values)]

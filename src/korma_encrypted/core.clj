@@ -35,8 +35,10 @@
   (keyword (str "encrypted_" (name field))))
 
 (defn- get-encrypted-data-encryption-key [pk]
-  (:data_encryption_key (first (korma/select data-encryption-keys
-                               (korma/where {:pk pk})))))
+  (-> (korma/select data-encryption-keys
+                    (korma/where {:pk pk}))
+      first
+      :data_encryption_key))
 
 (defn- most-recent-data-encryption-key []
   (first (korma/select data-encryption-keys
@@ -51,9 +53,11 @@
 (defn update-encrypted-entity [ent pk fields]
   (let [record (first (korma/select ent (korma/where {:pk pk})))
         updated-values (assoc fields :data_encryption_key_fk (:data_encryption_key_fk record))]
-    (korma/update ent
-                  (korma/set-fields updated-values)
-                  (korma/where {:pk pk}))))
+    (if record
+      (korma/update ent
+                    (korma/set-fields updated-values)
+                    (korma/where {:pk pk}))
+      0)))
 
 (defn- prepare-encrypted-fields [field key-service values]
   (if (contains? values field)
