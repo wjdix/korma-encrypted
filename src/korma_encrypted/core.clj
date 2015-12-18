@@ -34,32 +34,58 @@
 (defn- encrypted-name [field]
   (keyword (str "encrypted_" (name field))))
 
-(defn- get-encrypted-data-encryption-key []
-  (-> (korma/select data-encryption-keys)
+(defn- get-encrypted-data-encryption-key [pk]
+  (-> (korma/select data-encryption-keys
+                    (korma/where {:pk pk}))
       first
       :data_encryption_key))
 
-(def get-data-box
+(defn- most-recent-data-encryption-key []
+  (first (korma/select data-encryption-keys
+                       (korma/order :pk :desc))))
+
+(def get-data-encryption-box
   (memoize
-    (fn [key-service]
-      (let [data-encryption-key (decrypt key-service (get-encrypted-data-encryption-key))]
+    (fn [key-service pk]
+      (let [data-encryption-key (decrypt key-service (get-encrypted-data-encryption-key pk))]
         (SecretBox. (str->secretkey data-encryption-key))))))
 
-(defn prepare-values [field key-service values]
-  (let [box (get-data-box key-service)]
-    (if (contains? values field)
-      (let [unencrypted-value (field values)]
+(defn update-encrypted-entity [ent pk fields]
+  (let [record (first (korma/select ent (korma/where {:pk pk})))
+        updated-values (assoc fields :data_encryption_key_fk (:data_encryption_key_fk record))]
+    (if record
+      (korma/update ent
+                    (korma/set-fields updated-values)
+                    (korma/where {:pk pk}))
+      0)))
+
+(defn- prepare-encrypted-fields [field key-service values]
+  (if (contains? values field)
+    (let [data-encryption-key-fk (:data_encryption_key_fk values)
+          box (get-data-encryption-box key-service data-encryption-key-fk)
+          unencrypted-value (field values)]
         (-> values
             (assoc (encrypted-name field) (encrypt-value unencrypted-value box))
             (dissoc field)))
-      values)))
+    values))
+
+(defn prepare-encryption-key-field [values]
+  (if (not (contains? values :data_encryption_key_fk))
+    (assoc values :data_encryption_key_fk (:pk (most-recent-data-encryption-key)))
+    values))
+
+(defn prepare-values [field key-service values]
+  (prepare-encrypted-fields field key-service (prepare-encryption-key-field values)))
 
 (defn transform-values [field key-service values]
   (let [encrypted-field-name (encrypted-name field)
-        encrypted-value (get values encrypted-field-name)
-        box (get-data-box key-service)]
+        encrypted-value (get values encrypted-field-name)]
     (-> values
-        (assoc field (decrypt-value encrypted-value box))
+        (assoc field
+               (when encrypted-value
+                 (let [data-encryption-key-fk (:data_encryption_key_fk values)
+                       box (get-data-encryption-box key-service data-encryption-key-fk)]
+                    (decrypt-value encrypted-value box))))
         (dissoc encrypted-field-name))))
 
 (defn encrypted-field [ent field key-service]

@@ -35,6 +35,15 @@ also passing it your key encryption key and optionally the database to insert in
   (encrypted-fields key-encryption-key :number :expiration-date-month :expiration-date-year))
 ```
 
+When performing updates on entities with encrypted fields, use `korma-encrypted/update-encrypted-entity` instead of the standard `korma/update` function.  This ensures data encryption key foriegn keys stored on encrypted entities are preserved on updates.
+
+```clojure
+
+(update-encrypted-entity credit-card-with-encrypted-fields
+                         primary-key-of-card-to-update
+                         map-of-fields-to-update)
+```
+
 ## License
 
 Copyright © 2015 William Dix
