@@ -10,7 +10,7 @@ Korma-Encrypted provides an extension to Korma to encrypt given database columns
 Add korma-encrypted as a dependency to your lein project:
 
 ```clojure
-[korma-encrypted "0.0.1"]
+[korma-encrypted "0.0.1-SNAPSHOT"]
 ```
 
 ## Usage

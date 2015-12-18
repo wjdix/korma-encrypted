@@ -1,6 +1,6 @@
 (defproject korma-encrypted "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "An extension to korma which provides column encryption."
+  :url "https://github.com/wjdix/korma-encrypted"
   :license {:name "MIT License"
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.6.0"]
