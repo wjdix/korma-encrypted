@@ -166,3 +166,17 @@
         stored (first (korma/select data-encryption-keys
                              (korma/where {:pk (:pk saved-key)})))]
     (is (= (:data_encryption_key stored) (:data_encryption_key saved-key)))))
+
+(deftest test-key-rotation
+  (let [old-service key-service
+        new-service (ChlorideKeyService. (SecretKey/generate))
+        encrypted-key (get-encrypted-data-encryption-key (:pk initial-data-encryption-key))
+        decrypted-key (decrypt old-service encrypted-key)
+        new-encrypted-key (do
+                            (rotate-key-encryption-keys old-service new-service)
+                            (get-encrypted-data-encryption-key (:pk initial-data-encryption-key)))
+        new-decrypted-key (decrypt new-service new-encrypted-key)]
+      (is (= decrypted-key
+             new-decrypted-key))
+      (is (not (= encrypted-key
+                  new-encrypted-key)))))
