@@ -3,9 +3,6 @@ db:
   ports:
     - "5432"
 test:
-  image: clojure
-  working_dir: /code
-  volumes:
-    - .:/code
+  build: .
   links:
     - db
