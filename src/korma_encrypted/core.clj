@@ -39,7 +39,7 @@
 (defn rotate-key-encryption-keys
   ([old-service new-service]
    (let [wrapped-old-service (ErrorCatchingDecryptKeyService. old-service)]
-     (korma/transaction
+     (korma.db/transaction
        (doseq [encryption-key (korma/select data-encryption-keys)]
          (let [decrypted-key (decrypt wrapped-old-service (:data_encryption_key encryption-key))
                re-encrypted-key (encrypt new-service decrypted-key)]
