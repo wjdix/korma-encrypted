@@ -1,9 +1,10 @@
-# DO NOT USE THIS IS A WIP
 # korma-encrypted
 
 [![Build Status](https://travis-ci.org/wjdix/korma-encrypted.svg?branch=master)](https://travis-ci.org/wjdix/korma-encrypted)
 
-Korma-Encrypted provides an extension to Korma to encrypt given database columns.
+Korma-Encrypted provides an extension to Korma to encrypt given database columns. Korma-Encrypted should be used cautiously.
+It is being used in production. It is only currently tested against Postgres 9.1 and may not work with other databases korma supports.
+Pull-requests to add additional database support are welcome.
 
 ## Getting Started
 
