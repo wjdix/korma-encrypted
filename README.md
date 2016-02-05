@@ -24,6 +24,7 @@ called `data_encryption_keys`. You can generate an encrypted data encryption key
 also passing it your key encryption key and optionally the database to insert into.
 
 ```clojure
+
 (require [korma.core :as korma]
          [korma-encrypted.core :refer [encrypted-fields]])
 
@@ -43,6 +44,16 @@ When performing updates on entities with encrypted fields, use `korma-encrypted/
                          primary-key-of-card-to-update
                          map-of-fields-to-update)
 ```
+
+## Contributing
+
+Fork the library, write some tests, fix said tests, submit a pull-request.
+
+A `docker-compose.yml` is provided to make test set-up easy.
+`docker-compose up -d db` will start the postgres database that tests rely on.
+`docker-compose build test && docker-compose run test lein test` will run tests.
+You should also be able to open a repl in the test image if that's how you roll.
+
 
 ## License
 
