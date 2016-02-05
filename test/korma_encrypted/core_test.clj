@@ -33,6 +33,8 @@
 
 (def key-service (ChlorideKeyService. (SecretKey/generate)))
 
+(defn tap [x] (println x) x)
+
 (use-fixtures :once
   (fn [f]
     (sql/db-do-commands
@@ -175,8 +177,15 @@
         new-encrypted-key (do
                             (rotate-key-encryption-keys old-service new-service)
                             (get-encrypted-data-encryption-key (:pk initial-data-encryption-key)))
-        new-decrypted-key (decrypt new-service new-encrypted-key)]
+        new-decrypted-key (decrypt new-service new-encrypted-key)
+        rotated-twice-key (do
+                            (rotate-key-encryption-keys old-service new-service)
+                            (get-encrypted-data-encryption-key (:pk initial-data-encryption-key)))
+        new-decrypted-key (decrypt new-service new-encrypted-key)
+        rotated-twice-decrypted-key (decrypt new-service new-encrypted-key)]
       (is (= decrypted-key
              new-decrypted-key))
+      (is (= decrypted-key
+             rotated-twice-decrypted-key))
       (is (not (= encrypted-key
                   new-encrypted-key)))))

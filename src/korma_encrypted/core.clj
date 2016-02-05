@@ -17,6 +17,13 @@
   (decrypt [self data])
   (encrypt [self data]))
 
+(deftype ErrorCatchingDecryptKeyService [wrapped-service]
+  KeyService
+  (decrypt [_ data] (try (decrypt wrapped-service data)
+                       (catch Exception e data)))
+  (encrypt [_ data] (try (encrypt wrapped-service data)
+                       (catch Exception e data))))
+
 (defn generate-and-save-data-encryption-key
   ([key-service]
     (let [data-encryption-key (secretkey->str (SecretKey/generate))
@@ -28,20 +35,19 @@
     (korma.db/with-db db
       (generate-and-save-data-encryption-key key-service))))
 
+
 (defn rotate-key-encryption-keys
   ([old-service new-service]
-    (doseq [encryption-key (korma/select data-encryption-keys)]
-      (let [decrypted-key (decrypt old-service (:data_encryption_key encryption-key))
+   (let [wrapped-old-service (ErrorCatchingDecryptKeyService. old-service)]
+     (doseq [encryption-key (korma/select data-encryption-keys)]
+       (let [decrypted-key (decrypt wrapped-old-service (:data_encryption_key encryption-key))
             re-encrypted-key (encrypt new-service decrypted-key)]
         (korma/update data-encryption-keys
                       (korma/set-fields {:data_encryption_key re-encrypted-key})
-                      (korma/where {:pk (:pk encryption-key)})))))
+                      (korma/where {:pk (:pk encryption-key)}))))))
   ([old-service new-service db]
    (korma.db/with-db db
      (rotate-key-encryption-keys old-service new-service))))
-
-(defn tap-class [x] (println x ) (println (class x)) x)
-(defn tap [x] (println x) x)
 
 (defn- encrypted-name [field]
   (keyword (str "encrypted_" (name field))))
