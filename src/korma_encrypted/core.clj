@@ -1,12 +1,8 @@
 (ns korma-encrypted.core
   (:require [korma.core :as korma]
             [korma.db]
-            [byte-streams :as bs]
-            [clojure.data.codec.base64 :as b64]
             [korma-encrypted.crypto :refer :all])
-  (:import [com.jtdowney.chloride.keys SecretKey]
-           [org.bouncycastle.jce.provider BouncyCastleProvider]
-           [com.jtdowney.chloride.boxes SecretBox]))
+  (:import [org.bouncycastle.jce.provider BouncyCastleProvider]))
 
 (java.security.Security/addProvider (BouncyCastleProvider.))
 
@@ -26,7 +22,7 @@
 
 (defn generate-and-save-data-encryption-key
   ([key-service]
-    (let [data-encryption-key (secretkey->str (SecretKey/generate))
+    (let [data-encryption-key (secretkey->str (new-secret-key))
           encrypted-data-encryption-key (encrypt key-service data-encryption-key)]
       (korma/insert data-encryption-keys
                     (korma/values {:data_encryption_key encrypted-data-encryption-key}))))
@@ -34,7 +30,6 @@
   ([key-service db]
     (korma.db/with-db db
       (generate-and-save-data-encryption-key key-service))))
-
 
 (defn rotate-key-encryption-keys
   ([old-service new-service]
@@ -67,7 +62,7 @@
   (memoize
     (fn [key-service pk]
       (let [data-encryption-key (decrypt key-service (get-encrypted-data-encryption-key pk))]
-        (SecretBox. (str->secretkey data-encryption-key))))))
+        (str->secretbox data-encryption-key)))))
 
 (defn update-encrypted-entity [ent pk fields]
   (let [record (first (korma/select ent (korma/where {:pk pk})))

@@ -5,6 +5,8 @@
            [org.bouncycastle.jce.provider BouncyCastleProvider]
            [com.jtdowney.chloride.boxes SecretBox]))
 
+(defn new-secret-key [] (SecretKey/generate))
+
 (defn secretkey->str [encryption-key]
   (-> encryption-key
       .getBytes
@@ -16,6 +18,9 @@
       .getBytes
       b64/decode
       SecretKey.))
+
+(defn str->secretbox [secretkey]
+  (SecretBox. (str->secretkey secretkey)))
 
 (defn decrypt-value [value box]
   (when value
