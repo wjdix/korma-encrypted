@@ -1,4 +1,4 @@
-(defproject korma-encrypted "0.2.0"
+(defproject korma-encrypted "0.3.0"
   :description "An extension to korma which provides column encryption."
   :url "https://github.com/wjdix/korma-encrypted"
   :license {:name "MIT License"

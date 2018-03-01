@@ -11,7 +11,7 @@ Pull-requests to add additional database support are welcome.
 Add korma-encrypted as a dependency to your lein project:
 
 ```clojure
-[korma-encrypted "0.2.0"]
+[korma-encrypted "0.3.0"]
 ```
 
 ## Usage
