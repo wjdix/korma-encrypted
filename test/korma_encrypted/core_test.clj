@@ -9,7 +9,8 @@
             [clojure.data.codec.base64 :as b64])
   (:import [com.jtdowney.chloride.keys SecretKey]
            [org.bouncycastle.jce.provider BouncyCastleProvider]
-           [com.jtdowney.chloride.boxes SecretBox]))
+           [com.jtdowney.chloride.boxes SecretBox]
+           [com.jtdowney.chloride ChlorideException]))
 
 (def db-host (System/getenv "DB_PORT_5432_TCP_ADDR"))
 (def db-port (System/getenv "DB_PORT_5432_TCP_PORT"))
@@ -169,23 +170,24 @@
                              (korma/where {:pk (:pk saved-key)})))]
     (is (= (:data_encryption_key stored) (:data_encryption_key saved-key)))))
 
-(deftest test-key-rotation
+(deftest test-successful-key-rotation
   (let [old-service key-service
         new-service (ChlorideKeyService. (SecretKey/generate))
-        encrypted-key (get-encrypted-data-encryption-key (:pk initial-data-encryption-key))
-        decrypted-key (decrypt old-service encrypted-key)
+        old-encrypted-key (get-encrypted-data-encryption-key (:pk initial-data-encryption-key))
+        old-decrypted-key (decrypt old-service old-encrypted-key)
         new-encrypted-key (do
                             (rotate-key-encryption-keys old-service new-service)
                             (get-encrypted-data-encryption-key (:pk initial-data-encryption-key)))
-        new-decrypted-key (decrypt new-service new-encrypted-key)
-        rotated-twice-key (do
-                            (rotate-key-encryption-keys old-service new-service)
-                            (get-encrypted-data-encryption-key (:pk initial-data-encryption-key)))
-        new-decrypted-key (decrypt new-service new-encrypted-key)
-        rotated-twice-decrypted-key (decrypt new-service new-encrypted-key)]
-      (is (= decrypted-key
-             new-decrypted-key))
-      (is (= decrypted-key
-             rotated-twice-decrypted-key))
-      (is (not (= encrypted-key
-                  new-encrypted-key)))))
+        new-decrypted-key (decrypt new-service new-encrypted-key)]
+    (is (= old-decrypted-key
+           new-decrypted-key))
+    (is (not (= old-encrypted-key
+                new-encrypted-key)))))
+
+(deftest test-failed-key-rotation
+  (let [bad-service (ChlorideKeyService. (SecretKey/generate))
+        new-service (ChlorideKeyService. (SecretKey/generate))
+        old-encrypted-key (get-encrypted-data-encryption-key (:pk initial-data-encryption-key))]
+    (is (thrown? ChlorideException (rotate-key-encryption-keys bad-service new-service)))
+    (is (= old-encrypted-key
+           (get-encrypted-data-encryption-key (:pk initial-data-encryption-key))))))
